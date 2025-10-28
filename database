@@ -1,0 +1,153 @@
+create database SmartTaskTracker;
+use  SmartTaskTracker;
+CREATE TABLE users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(55) NOT NULL UNIQUE,
+    name VARCHAR(50) NOT NULL,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    password VARCHAR(20) NOT NULL,
+    profession VARCHAR(50) NOT NULL,
+    company_name VARCHAR(50) NOT NULL,
+    designation VARCHAR(50),
+    city VARCHAR(50)NOT NULL
+);
+
+RENAME TABLE user TO users;
+CREATE TABLE Tasks;
+USE SmartTaskTracker;
+SELECT * FROM users;
+USE SmartTaskTracker;
+ALTER TABLE users MODIFY COLUMN password VARCHAR(255);
+CREATE TABLE tasks (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    file_path VARCHAR(500),
+    start_date DATETIME,
+    end_date DATETIME,
+    assignment_type ENUM('SELF', 'INDIVIDUAL', 'GROUP') NOT NULL,
+    created_by INT NOT NULL,
+    status ENUM('PENDING', 'IN_PROGRESS', 'COMPLETED') DEFAULT 'PENDING',
+    priority ENUM('LOW', 'MEDIUM', 'HIGH') DEFAULT 'MEDIUM',
+    FOREIGN KEY (created_by) REFERENCES users(id)
+);
+select * from tasks;
+DESCRIBE tasks;
+
+CREATE TABLE task_assignments (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    task_id INT NOT NULL,
+    user_id INT NOT NULL,
+    assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status ENUM('ASSIGNED', 'IN_PROGRESS', 'COMPLETED') DEFAULT 'ASSIGNED',
+    FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+USE SmartTaskTracker;
+USE SmartTaskTracker;
+
+-- Add is_trashed column to tasks table
+ALTER TABLE tasks ADD COLUMN is_trashed BOOLEAN DEFAULT FALSE;
+
+
+-- Issues table (for future use)
+CREATE TABLE issues (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    issue_name VARCHAR(255) NOT NULL,
+    task_id INT,
+    department VARCHAR(100),
+    priority VARCHAR(20) DEFAULT 'MEDIUM',
+    status VARCHAR(20) DEFAULT 'OPEN',
+    description TEXT,
+    assigned_to INT,
+    created_by INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    start_date TIMESTAMP NULL,
+    is_deleted BOOLEAN DEFAULT FALSE,
+    FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE SET NULL,
+    FOREIGN KEY (assigned_to) REFERENCES users(id) ON DELETE SET NULL,
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE
+);
+
+drop table issues;
+DELETE FROM tasks
+    WHERE id = 4;
+USE SmartTaskTracker;
+
+-- Add assigned_users column to track who can see/complete the task
+-- This will store comma-separated user IDs for INDIVIDUAL/GROUP assignments
+
+USE SmartTaskTracker;
+
+-- Remove the columns we added
+ALTER TABLE tasks DROP COLUMN assigned_users;
+ALTER TABLE tasks DROP COLUMN assigned_names;
+
+-- Remove the indexes
+DROP INDEX idx_task_user ON task_assignments;
+DROP INDEX idx_user_tasks ON task_assignments;
+
+-- Verify removal
+DESCRIBE tasks;
+SHOW INDEX FROM task_assignments;
+
+USE SmartTaskTracker;
+
+SHOW CREATE TABLE task_assignments;
+USE SmartTaskTracker;
+
+-- Add the two columns we need
+ALTER TABLE tasks 
+ADD COLUMN assigned_users TEXT COMMENT 'Comma-separated user IDs';
+
+ALTER TABLE tasks 
+ADD COLUMN assigned_names TEXT COMMENT 'Comma-separated user names';
+
+-- Verify
+DESCRIBE tasks;
+USE SmartTaskTracker;
+
+-- Check your user passwords
+SELECT id, email, password, LENGTH(password) as password_length 
+FROM users 
+LIMIT 5;
+select * from tasks;
+----------------------
+CREATE TABLE task_assignments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    task_id INT NOT NULL,
+    user_id INT NOT NULL,
+    assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_assignment (task_id, user_id)
+);
+
+ALTER TABLE issues 
+ADD COLUMN assignment_type ENUM('SELF', 'INDIVIDUAL', 'GROUP') DEFAULT 'SELF';
+
+-- Create issue_assignments table (like task_assignments)
+CREATE TABLE IF NOT EXISTS issue_assignments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    issue_id INT NOT NULL,
+    user_id INT NOT NULL,
+    assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (issue_id) REFERENCES issues(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_assignment (issue_id, user_id)
+);
+-- Add assignment_type column to issues table
+ALTER TABLE issues 
+ADD COLUMN assignment_type ENUM('SELF', 'INDIVIDUAL', 'GROUP') DEFAULT 'SELF' AFTER priority;
+
+-- Create issue_assignments table (like task_assignments)
+CREATE TABLE IF NOT EXISTS issue_assignments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    issue_id INT NOT NULL,
+    user_id INT NOT NULL,
+    assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (issue_id) REFERENCES issues(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_assignment (issue_id, user_id)
+);
